@@ -1,0 +1,82 @@
+{
+  "hero": {
+    "title": "Welcome",
+    "subtitle": "Full Stack Developer",
+    "description": "Passionate about creating amazing web experiences",
+    "image": "/images/hero.jpg",
+    "ctaText": "View My Work",
+    "ctaLink": "/projects",
+    "background": "gradient",
+    "animation": "fade-in"
+  },
+  "about": {
+    "title": "About Me",
+    "description": "I am a passionate full-stack developer with experience in modern web technologies.",
+    "image": "/images/about.jpg",
+    "skills": [
+      "React",
+      "Node.js",
+      "TypeScript",
+      "Python"
+    ],
+    "experience": "5+ years"
+  },
+  "projects": [
+    {
+      "id": "1",
+      "title": "E-commerce Platform",
+      "description": "A modern e-commerce platform built with Next.js and Stripe",
+      "image": "/images/project1.jpg",
+      "technologies": [
+        "Next.js",
+        "React",
+        "Stripe",
+        "Tailwind CSS"
+      ],
+      "githubUrl": "https://github.com/example/ecommerce",
+      "liveUrl": "https://ecommerce.example.com",
+      "featured": true
+    }
+  ],
+  "experience": [
+    {
+      "id": "1",
+      "title": "Senior Full Stack Developer",
+      "company": "Tech Company",
+      "period": "2022 - Present",
+      "description": "Leading development of web applications",
+      "technologies": [
+        "React",
+        "Node.js",
+        "TypeScript"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "id": "1",
+      "name": "React",
+      "category": "Frontend",
+      "level": 90,
+      "icon": "react"
+    },
+    {
+      "id": "2",
+      "name": "Node.js",
+      "category": "Backend",
+      "level": 85,
+      "icon": "nodejs"
+    }
+  ],
+  "contact": {
+    "email": "contact@example.com",
+    "phone": "+1234567890",
+    "address": "San Francisco, CA",
+    "socialLinks": {
+      "github": "https://github.com/example",
+      "linkedin": "https://linkedin.com/in/example",
+      "twitter": "https://twitter.com/example"
+    }
+  },
+  "lastUpdated": "2025-07-01T10:55:08.183Z"
+}
