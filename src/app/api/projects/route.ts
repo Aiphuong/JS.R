@@ -13,4 +13,19 @@ export async function GET() {
 			{ status: 500 }
 		)
 	}
+}
+
+export async function POST(request: Request) {
+	try {
+		const body = await request.json()
+		const data = await simpleStorage.createProject(body)
+		
+		return NextResponse.json({ success: true, data })
+	} catch (error) {
+		console.error('POST /api/projects error:', error)
+		return NextResponse.json(
+			{ success: false, error: 'Failed to create project' },
+			{ status: 500 }
+		)
+	}
 } 

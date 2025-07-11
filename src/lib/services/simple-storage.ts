@@ -1,73 +1,75 @@
 import { promises as fs } from 'fs'
 import path from 'path'
+import { AboutContent, ContactContent, ExperienceContent, HeroContent, PortfolioData, ProjectContent, SkillContent } from '../types'
 
-interface HeroContent {
-	title: string
-	subtitle?: string
-	description?: string
-	image?: string
-	ctaText?: string
-	ctaLink?: string
-	background?: string
-	animation?: string
-}
-
-interface AboutContent {
-	title: string
-	description: string
-	image?: string
-	skills?: string[]
-	experience?: string
-}
-
-interface ProjectContent {
-	id: string
-	title: string
-	description: string
-	image?: string
-	technologies?: string[]
-	githubUrl?: string
-	liveUrl?: string
-	featured?: boolean
-}
-
-interface ExperienceContent {
-	id: string
-	title: string
-	company: string
-	period: string
-	description: string
-	technologies?: string[]
-}
-
-interface SkillContent {
-	id: string
-	name: string
-	category: string
-	level: number
-	icon?: string
-}
-
-interface ContactContent {
-	email: string
-	phone?: string
-	address?: string
-	socialLinks?: {
-		github?: string
-		linkedin?: string
-		twitter?: string
-		instagram?: string
-	}
-}
-
-interface PortfolioData {
-	hero: HeroContent | null
-	about: AboutContent | null
-	projects: ProjectContent[]
-	experience: ExperienceContent[]
-	skills: SkillContent[]
-	contact: ContactContent | null
-	lastUpdated: string
+// Default data to avoid duplication
+const DEFAULT_DATA: PortfolioData = {
+	hero: {
+		title: 'Welcome to My Portfolio',
+		subtitle: 'Full Stack Developer',
+		description: 'Passionate about creating amazing web experiences',
+		image: '/images/hero.jpg',
+		ctaText: 'View My Work',
+		ctaLink: '/projects',
+		background: 'gradient',
+		animation: 'fade-in'
+	},
+	about: {
+		title: 'About Me',
+		description: 'I am a passionate full-stack developer with experience in modern web technologies.',
+		image: '/images/about.jpg',
+		skills: ['React', 'Node.js', 'TypeScript', 'Python'],
+		experience: '5+ years'
+	},
+	projects: [
+		{
+			id: '1',
+			title: 'E-commerce Platform',
+			description: 'A modern e-commerce platform built with Next.js and Stripe',
+			image: '/images/project1.jpg',
+			technologies: ['Next.js', 'React', 'Stripe', 'Tailwind CSS'],
+			githubUrl: 'https://github.com/example/ecommerce',
+			liveUrl: 'https://ecommerce.example.com',
+			featured: true
+		}
+	],
+	experience: [
+		{
+			id: '1',
+			title: 'Senior Full Stack Developer',
+			company: 'Tech Company',
+			period: '2022 - Present',
+			description: 'Leading development of web applications',
+			technologies: ['React', 'Node.js', 'TypeScript']
+		}
+	],
+	skills: [
+		{
+			id: '1',
+			name: 'React',
+			category: 'Frontend',
+			level: 90,
+			icon: 'react'
+		},
+		{
+			id: '2',
+			name: 'Node.js',
+			category: 'Backend',
+			level: 85,
+			icon: 'nodejs'
+		}
+	],
+	contact: {
+		email: 'contact@example.com',
+		phone: '+1234567890',
+		address: 'San Francisco, CA',
+		socialLinks: {
+			github: 'https://github.com/example',
+			linkedin: 'https://linkedin.com/in/example',
+			twitter: 'https://twitter.com/example'
+		}
+	},
+	lastUpdated: new Date().toISOString()
 }
 
 class SimpleStorageService {
@@ -76,74 +78,7 @@ class SimpleStorageService {
 
 	constructor() {
 		this.dataPath = path.join(process.cwd(), 'data', 'portfolio-data.json')
-		this.data = {
-			hero: {
-				title: 'Welcome to My Portfolio',
-				subtitle: 'Full Stack Developer',
-				description: 'Passionate about creating amazing web experiences',
-				image: '/images/hero.jpg',
-				ctaText: 'View My Work',
-				ctaLink: '/projects',
-				background: 'gradient',
-				animation: 'fade-in'
-			},
-			about: {
-				title: 'About Me',
-				description: 'I am a passionate full-stack developer with experience in modern web technologies.',
-				image: '/images/about.jpg',
-				skills: ['React', 'Node.js', 'TypeScript', 'Python'],
-				experience: '5+ years'
-			},
-			projects: [
-				{
-					id: '1',
-					title: 'E-commerce Platform',
-					description: 'A modern e-commerce platform built with Next.js and Stripe',
-					image: '/images/project1.jpg',
-					technologies: ['Next.js', 'React', 'Stripe', 'Tailwind CSS'],
-					githubUrl: 'https://github.com/example/ecommerce',
-					liveUrl: 'https://ecommerce.example.com',
-					featured: true
-				}
-			],
-			experience: [
-				{
-					id: '1',
-					title: 'Senior Full Stack Developer',
-					company: 'Tech Company',
-					period: '2022 - Present',
-					description: 'Leading development of web applications',
-					technologies: ['React', 'Node.js', 'TypeScript']
-				}
-			],
-			skills: [
-				{
-					id: '1',
-					name: 'React',
-					category: 'Frontend',
-					level: 90,
-					icon: 'react'
-				},
-				{
-					id: '2',
-					name: 'Node.js',
-					category: 'Backend',
-					level: 85,
-					icon: 'nodejs'
-				}
-			],
-			contact: {
-				email: 'contact@example.com',
-				phone: '+1234567890',
-				address: 'San Francisco, CA',
-				socialLinks: {
-					github: 'https://github.com/example',
-					linkedin: 'https://linkedin.com/in/example',
-					twitter: 'https://twitter.com/example'
-				}
-			},
-			lastUpdated: new Date().toISOString()
-		}
+		this.data = { ...DEFAULT_DATA }
 	}
 
 	async initialize(): Promise<void> {
@@ -157,7 +92,7 @@ class SimpleStorageService {
 				const fileContent = await fs.readFile(this.dataPath, 'utf-8')
 				const loadedData = JSON.parse(fileContent)
 				// Merge with default data to ensure all fields exist
-				this.data = { ...this.data, ...loadedData }
+				this.data = { ...DEFAULT_DATA, ...loadedData }
 			} catch {
 				// File doesn't exist, use default data
 				await this.saveData()
@@ -337,74 +272,7 @@ class SimpleStorageService {
 	// Reset to default
 	async resetToDefault(): Promise<void> {
 		await this.initialize()
-		this.data = {
-			hero: {
-				title: 'Welcome to My Portfolio',
-				subtitle: 'Full Stack Developer',
-				description: 'Passionate about creating amazing web experiences',
-				image: '/images/hero.jpg',
-				ctaText: 'View My Work',
-				ctaLink: '/projects',
-				background: 'gradient',
-				animation: 'fade-in'
-			},
-			about: {
-				title: 'About Me',
-				description: 'I am a passionate full-stack developer with experience in modern web technologies.',
-				image: '/images/about.jpg',
-				skills: ['React', 'Node.js', 'TypeScript', 'Python'],
-				experience: '5+ years'
-			},
-			projects: [
-				{
-					id: '1',
-					title: 'E-commerce Platform',
-					description: 'A modern e-commerce platform built with Next.js and Stripe',
-					image: '/images/project1.jpg',
-					technologies: ['Next.js', 'React', 'Stripe', 'Tailwind CSS'],
-					githubUrl: 'https://github.com/example/ecommerce',
-					liveUrl: 'https://ecommerce.example.com',
-					featured: true
-				}
-			],
-			experience: [
-				{
-					id: '1',
-					title: 'Senior Full Stack Developer',
-					company: 'Tech Company',
-					period: '2022 - Present',
-					description: 'Leading development of web applications',
-					technologies: ['React', 'Node.js', 'TypeScript']
-				}
-			],
-			skills: [
-				{
-					id: '1',
-					name: 'React',
-					category: 'Frontend',
-					level: 90,
-					icon: 'react'
-				},
-				{
-					id: '2',
-					name: 'Node.js',
-					category: 'Backend',
-					level: 85,
-					icon: 'nodejs'
-				}
-			],
-			contact: {
-				email: 'contact@example.com',
-				phone: '+1234567890',
-				address: 'San Francisco, CA',
-				socialLinks: {
-					github: 'https://github.com/example',
-					linkedin: 'https://linkedin.com/in/example',
-					twitter: 'https://twitter.com/example'
-				}
-			},
-			lastUpdated: new Date().toISOString()
-		}
+		this.data = { ...DEFAULT_DATA }
 		await this.saveData()
 	}
 }

@@ -4,24 +4,23 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Save, ArrowLeft, Plus, Edit, Trash2, Eye } from 'lucide-react'
 import Link from 'next/link'
-import { Project, PortfolioContent } from '@/lib/types/content'
+import { ProjectContent } from '@/lib/services/simple-storage'
 
 interface ProjectFormData {
 	title: string
 	description: string
 	image: string
 	technologies: string
-	category: string
 	liveUrl: string
 	githubUrl: string
 	featured: boolean
 }
 
 export default function ProjectsEditor() {
-	const [content, setContent] = useState<PortfolioContent | null>(null)
+	const [projects, setProjects] = useState<ProjectContent[]>([])
 	const [loading, setLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
-	const [editingProject, setEditingProject] = useState<Project | null>(null)
+	const [editingProject, setEditingProject] = useState<ProjectContent | null>(null)
 	const [showForm, setShowForm] = useState(false)
 
 	const {
@@ -32,64 +31,57 @@ export default function ProjectsEditor() {
 	} = useForm<ProjectFormData>()
 
 	useEffect(() => {
-		fetchContent()
+		fetchProjects()
 	}, [])
 
-	const fetchContent = async () => {
+	const fetchProjects = async () => {
 		try {
-			const response = await fetch('/api/content')
+			const response = await fetch('/api/projects')
 			const data = await response.json()
-			setContent(data)
+			setProjects(data)
 		} catch (error) {
-			console.error('Error fetching content:', error)
+			console.error('Error fetching projects:', error)
 		} finally {
 			setLoading(false)
 		}
 	}
 
 	const onSubmit = async (data: ProjectFormData) => {
-		if (!content) return
-
 		setSaving(true)
 		try {
-			const projectData: Project = {
-				id: editingProject?.id || Date.now().toString(),
+			const projectData: Omit<ProjectContent, 'id'> = {
 				title: data.title,
 				description: data.description,
 				image: data.image,
 				technologies: data.technologies.split(',').map(tech => tech.trim()),
-				category: data.category,
 				liveUrl: data.liveUrl || undefined,
 				githubUrl: data.githubUrl || undefined,
 				featured: data.featured
 			}
 
-			let updatedProjects: Project[]
+			let response
 			if (editingProject) {
 				// Update existing project
-				updatedProjects = content.projects.map(p => 
-					p.id === editingProject.id ? projectData : p
-				)
+				response = await fetch(`/api/projects/${editingProject.id}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(projectData),
+				})
 			} else {
 				// Add new project
-				updatedProjects = [...content.projects, projectData]
+				response = await fetch('/api/projects', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(projectData),
+				})
 			}
-
-			const updatedContent = {
-				...content,
-				projects: updatedProjects
-			}
-
-			const response = await fetch('/api/content', {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(updatedContent),
-			})
 
 			if (response.ok) {
-				setContent(updatedContent)
+				await fetchProjects()
 				resetForm()
 				alert(editingProject ? 'Project updated successfully!' : 'Project added successfully!')
 			} else {
@@ -104,25 +96,15 @@ export default function ProjectsEditor() {
 	}
 
 	const deleteProject = async (projectId: string) => {
-		if (!content || !confirm('Are you sure you want to delete this project?')) return
+		if (!confirm('Are you sure you want to delete this project?')) return
 
 		try {
-			const updatedProjects = content.projects.filter(p => p.id !== projectId)
-			const updatedContent = {
-				...content,
-				projects: updatedProjects
-			}
-
-			const response = await fetch('/api/content', {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(updatedContent),
+			const response = await fetch(`/api/projects/${projectId}`, {
+				method: 'DELETE',
 			})
 
 			if (response.ok) {
-				setContent(updatedContent)
+				await fetchProjects()
 				alert('Project deleted successfully!')
 			} else {
 				alert('Error deleting project')
@@ -133,17 +115,16 @@ export default function ProjectsEditor() {
 		}
 	}
 
-	const editProject = (project: Project) => {
+	const editProject = (project: ProjectContent) => {
 		setEditingProject(project)
 		reset({
 			title: project.title,
 			description: project.description,
-			image: project.image,
-			technologies: project.technologies.join(', '),
-			category: project.category,
+			image: project.image || '',
+			technologies: project.technologies?.join(', ') || '',
 			liveUrl: project.liveUrl || '',
 			githubUrl: project.githubUrl || '',
-			featured: project.featured
+			featured: project.featured || false
 		})
 		setShowForm(true)
 	}
@@ -156,7 +137,6 @@ export default function ProjectsEditor() {
 			description: '',
 			image: '',
 			technologies: '',
-			category: '',
 			liveUrl: '',
 			githubUrl: '',
 			featured: false
@@ -198,130 +178,66 @@ export default function ProjectsEditor() {
 
 			{/* Form */}
 			{showForm && (
-				<div className="bg-white rounded-lg border border-gray-200 p-6">
-					<div className="flex justify-between items-center mb-6">
-						<h2 className="text-xl font-semibold text-gray-900">
-							{editingProject ? 'Edit Project' : 'Add New Project'}
-						</h2>
-						<button
-							onClick={resetForm}
-							className="text-gray-500 hover:text-gray-700"
-						>
-							× Close
-						</button>
-					</div>
-
-					<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+				<div className="bg-white p-6 rounded-lg shadow">
+					<h2 className="text-xl font-semibold mb-4">
+						{editingProject ? 'Edit Project' : 'Add New Project'}
+					</h2>
+					<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div>
-								<label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-									Project Title *
-								</label>
+								<label className="block text-sm font-medium text-gray-700">Title</label>
 								<input
 									type="text"
-									id="title"
 									{...register('title', { required: 'Title is required' })}
-									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-									placeholder="Project Name"
+									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 								/>
-								{errors.title && (
-									<p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
-								)}
+								{errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
 							</div>
-
 							<div>
-								<label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-									Category *
-								</label>
-								<select
-									id="category"
-									{...register('category', { required: 'Category is required' })}
-									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-								>
-									<option value="">Select Category</option>
-									<option value="fullstack">Full Stack</option>
-									<option value="frontend">Frontend</option>
-									<option value="backend">Backend</option>
-									<option value="mobile">Mobile</option>
-									<option value="other">Other</option>
-								</select>
-								{errors.category && (
-									<p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
-								)}
+								<label className="block text-sm font-medium text-gray-700">Image URL</label>
+								<input
+									type="text"
+									{...register('image')}
+									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								/>
 							</div>
 						</div>
 
 						<div>
-							<label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-								Description *
-							</label>
+							<label className="block text-sm font-medium text-gray-700">Description</label>
 							<textarea
-								id="description"
-								rows={4}
 								{...register('description', { required: 'Description is required' })}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-								placeholder="Describe your project..."
+								rows={3}
+								className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 							/>
-							{errors.description && (
-								<p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-							)}
+							{errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
 						</div>
 
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-							<div>
-								<label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
-									Image URL
-								</label>
-								<input
-									type="url"
-									id="image"
-									{...register('image')}
-									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-									placeholder="https://example.com/image.jpg"
-								/>
-							</div>
-
-							<div>
-								<label htmlFor="technologies" className="block text-sm font-medium text-gray-700 mb-2">
-									Technologies *
-								</label>
-								<input
-									type="text"
-									id="technologies"
-									{...register('technologies', { required: 'Technologies are required' })}
-									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-									placeholder="React, TypeScript, Node.js (comma separated)"
-								/>
-								{errors.technologies && (
-									<p className="mt-1 text-sm text-red-600">{errors.technologies.message}</p>
-								)}
-							</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700">Technologies (comma-separated)</label>
+							<input
+								type="text"
+								{...register('technologies')}
+								placeholder="React, Node.js, TypeScript"
+								className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+							/>
 						</div>
 
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div>
-								<label htmlFor="liveUrl" className="block text-sm font-medium text-gray-700 mb-2">
-									Live URL
-								</label>
+								<label className="block text-sm font-medium text-gray-700">Live URL</label>
 								<input
 									type="url"
-									id="liveUrl"
 									{...register('liveUrl')}
-									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-									placeholder="https://example.com"
+									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 								/>
 							</div>
-
 							<div>
-								<label htmlFor="githubUrl" className="block text-sm font-medium text-gray-700 mb-2">
-									GitHub URL
-								</label>
+								<label className="block text-sm font-medium text-gray-700">GitHub URL</label>
 								<input
 									type="url"
-									id="githubUrl"
 									{...register('githubUrl')}
-									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-									placeholder="https://github.com/username/project"
+									className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 								/>
 							</div>
 						</div>
@@ -329,23 +245,13 @@ export default function ProjectsEditor() {
 						<div className="flex items-center">
 							<input
 								type="checkbox"
-								id="featured"
 								{...register('featured')}
 								className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
 							/>
-							<label htmlFor="featured" className="ml-2 block text-sm text-gray-900">
-								Featured Project
-							</label>
+							<label className="ml-2 block text-sm text-gray-900">Featured Project</label>
 						</div>
 
-						<div className="flex justify-end space-x-3">
-							<button
-								type="button"
-								onClick={resetForm}
-								className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-							>
-								Cancel
-							</button>
+						<div className="flex space-x-3">
 							<button
 								type="submit"
 								disabled={saving}
@@ -354,78 +260,78 @@ export default function ProjectsEditor() {
 								<Save className="w-4 h-4 mr-2" />
 								{saving ? 'Saving...' : (editingProject ? 'Update Project' : 'Add Project')}
 							</button>
+							<button
+								type="button"
+								onClick={resetForm}
+								className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+							>
+								Cancel
+							</button>
 						</div>
 					</form>
 				</div>
 			)}
 
 			{/* Projects List */}
-			<div className="bg-white rounded-lg border border-gray-200">
+			<div className="bg-white rounded-lg shadow">
 				<div className="px-6 py-4 border-b border-gray-200">
-					<h3 className="text-lg font-medium text-gray-900">Projects ({content?.projects.length || 0})</h3>
+					<h2 className="text-lg font-medium text-gray-900">Projects ({projects.length})</h2>
 				</div>
 				<div className="divide-y divide-gray-200">
-					{content?.projects.map((project) => (
+					{projects.map((project) => (
 						<div key={project.id} className="p-6">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center space-x-4">
-									{project.image && (
-										<img
-											src={project.image}
-											alt={project.title}
-											className="w-16 h-16 object-cover rounded-lg"
-										/>
+							<div className="flex items-start justify-between">
+								<div className="flex-1">
+									<div className="flex items-center space-x-3">
+										<h3 className="text-lg font-medium text-gray-900">{project.title}</h3>
+										{project.featured && (
+											<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+												Featured
+											</span>
+										)}
+									</div>
+									<p className="text-gray-600 mt-1">{project.description}</p>
+									{project.technologies && project.technologies.length > 0 && (
+										<div className="mt-2">
+											<span className="text-sm text-gray-500">Technologies: </span>
+											<span className="text-sm text-gray-700">{project.technologies.join(', ')}</span>
+										</div>
 									)}
-									<div>
-										<div className="flex items-center space-x-2">
-											<h4 className="text-lg font-medium text-gray-900">{project.title}</h4>
-											{project.featured && (
-												<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-													Featured
-												</span>
-											)}
-										</div>
-										<p className="text-sm text-gray-600 mt-1">{project.description}</p>
-										<div className="flex items-center space-x-4 mt-2">
-											<span className="text-xs text-gray-500 capitalize">{project.category}</span>
-											<div className="flex flex-wrap gap-1">
-												{project.technologies.slice(0, 3).map((tech, index) => (
-													<span
-														key={index}
-														className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-													>
-														{tech}
-													</span>
-												))}
-												{project.technologies.length > 3 && (
-													<span className="text-xs text-gray-500">
-														+{project.technologies.length - 3} more
-													</span>
-												)}
-											</div>
-										</div>
+									<div className="mt-3 flex space-x-3">
+										{project.liveUrl && (
+											<a
+												href={project.liveUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+											>
+												<Eye className="w-4 h-4 mr-1" />
+												Live Demo
+											</a>
+										)}
+										{project.githubUrl && (
+											<a
+												href={project.githubUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800"
+											>
+												<Edit className="w-4 h-4 mr-1" />
+												GitHub
+											</a>
+										)}
 									</div>
 								</div>
-								<div className="flex items-center space-x-2">
-									{project.liveUrl && (
-										<a
-											href={project.liveUrl}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="p-2 text-gray-400 hover:text-gray-600"
-										>
-											<Eye className="w-4 h-4" />
-										</a>
-									)}
+								<div className="flex space-x-2">
 									<button
 										onClick={() => editProject(project)}
-										className="p-2 text-gray-400 hover:text-blue-600"
+										className="inline-flex items-center p-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
 									>
 										<Edit className="w-4 h-4" />
 									</button>
 									<button
 										onClick={() => deleteProject(project.id)}
-										className="p-2 text-gray-400 hover:text-red-600"
+										className="inline-flex items-center p-2 border border-gray-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
 									>
 										<Trash2 className="w-4 h-4" />
 									</button>
@@ -433,9 +339,9 @@ export default function ProjectsEditor() {
 							</div>
 						</div>
 					))}
-					{(!content?.projects || content.projects.length === 0) && (
+					{projects.length === 0 && (
 						<div className="p-6 text-center text-gray-500">
-							No projects yet. Add your first project!
+							No projects found. Add your first project to get started.
 						</div>
 					)}
 				</div>
