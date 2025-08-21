@@ -56,23 +56,47 @@
 	body {
 		background-color: hsl(var(--background));
 		color: hsl(var(--foreground));
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+	}
+	
+	/* Smooth scrolling */
+	html {
+		scroll-behavior: smooth;
+	}
+	
+	/* Custom scrollbar */
+	::-webkit-scrollbar {
+		width: 8px;
+	}
+	
+	::-webkit-scrollbar-track {
+		background: #f1f1f1;
+	}
+	
+	::-webkit-scrollbar-thumb {
+		background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+		border-radius: 4px;
+	}
+	
+	::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(to bottom, #2563eb, #7c3aed);
 	}
 }
 
 @layer utilities {
 	.section-padding {
-		padding: 4rem 1rem;
+		padding: 4rem 1rem 2rem 1rem;
 	}
 	
 	@media (min-width: 640px) {
 		.section-padding {
-			padding: 4rem 1.5rem;
+			padding: 5rem 1.5rem 3rem 1.5rem;
 		}
 	}
 	
 	@media (min-width: 1024px) {
 		.section-padding {
-			padding: 6rem 2rem;
+			padding: 6rem 2rem 4rem 2rem;
 		}
 	}
 	
@@ -83,14 +107,14 @@
 	}
 	
 	.gradient-text {
-		background: linear-gradient(to right, #2563eb, #9333ea);
+		background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899);
 		-webkit-background-clip: text;
 		background-clip: text;
 		color: transparent;
 	}
 	
 	.glass-effect {
-		backdrop-filter: blur(4px);
+		backdrop-filter: blur(16px);
 		background-color: rgba(255, 255, 255, 0.1);
 		border: 1px solid rgba(255, 255, 255, 0.2);
 	}
@@ -100,75 +124,89 @@
 	}
 	
 	.card-hover:hover {
-		box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
-		transform: translateY(-0.25rem);
+		box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1);
+		transform: translateY(-8px);
 	}
-
-	.bg-background {
-		background-color: hsl(var(--background));
+	
+	/* Enhanced glassmorphism */
+	.glass-card {
+		backdrop-filter: blur(20px);
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 	}
-
-	.text-foreground {
-		color: hsl(var(--foreground));
+	
+	/* Floating animation */
+	@keyframes float {
+		0%, 100% { transform: translateY(0px); }
+		50% { transform: translateY(-20px); }
 	}
-
-	.bg-card {
-		background-color: hsl(var(--card));
+	
+	.animate-float {
+		animation: float 6s ease-in-out infinite;
 	}
-
-	.text-card-foreground {
-		color: hsl(var(--card-foreground));
+	
+	/* Gradient text utilities */
+	.text-gradient-blue {
+		background: linear-gradient(to right, #3b82f6, #1d4ed8);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
 	}
-
-	.bg-primary {
-		background-color: hsl(var(--primary));
+	
+	.text-gradient-purple {
+		background: linear-gradient(to right, #8b5cf6, #7c3aed);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
 	}
-
-	.text-primary-foreground {
-		color: hsl(var(--primary-foreground));
+	
+	.text-gradient-pink {
+		background: linear-gradient(to right, #ec4899, #be185d);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
 	}
-
-	.bg-secondary {
-		background-color: hsl(var(--secondary));
+	
+	/* Enhanced shadows */
+	.shadow-glow {
+		box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 	}
-
-	.text-secondary-foreground {
-		color: hsl(var(--secondary-foreground));
+	
+	.shadow-glow-purple {
+		box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
 	}
-
-	.bg-muted {
-		background-color: hsl(var(--muted));
+	
+	.shadow-glow-pink {
+		box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
 	}
-
-	.text-muted-foreground {
-		color: hsl(var(--muted-foreground));
+	
+	/* Ensure proper spacing for sections when navigating from navbar */
+	section[id] {
+		scroll-margin-top: 4rem; /* h-16 = 4rem */
 	}
-
-	.bg-accent {
-		background-color: hsl(var(--accent));
+	
+	/* Hero section doesn't need scroll margin since navbar is hidden */
+	section[id="home"] {
+		scroll-margin-top: 0;
 	}
-
-	.text-accent-foreground {
-		color: hsl(var(--accent-foreground));
+	
+	/* Enhanced button styles */
+	.btn-primary {
+		@apply px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300;
 	}
-
-	.bg-destructive {
-		background-color: hsl(var(--destructive));
+	
+	.btn-secondary {
+		@apply px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300;
 	}
-
-	.text-destructive-foreground {
-		color: hsl(var(--destructive-foreground));
+	
+	/* Enhanced card styles */
+	.card-modern {
+		@apply bg-white rounded-2xl border border-gray-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300;
 	}
-
-	.border-border {
-		border-color: hsl(var(--border));
-	}
-
-	.bg-input {
-		background-color: hsl(var(--input));
-	}
-
-	.ring-ring {
-		--tw-ring-color: hsl(var(--ring));
+	
+	/* Enhanced input styles */
+	.input-modern {
+		@apply w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300;
 	}
 }
